@@ -9,7 +9,7 @@ const mime = require("mime");
  * @param  {Dictionary} globalOpts
  *         @property {String?} projectId
  *         @property {String?} keyFilename
- *         @property {String?} bucket
+ *         @property {String} bucket
  *         @property {Object?} bucketMetadata used to create non-existing bucket
  *         @property {Number?} maxBytes
  *         @property {Object?} metadata The metadata of gcs file
