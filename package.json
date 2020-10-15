@@ -1,0 +1,31 @@
+{
+  "name": "skipper-gcstorage",
+  "version": "1.0.0",
+  "description": "A skipper adapter used for uploading files to Google Cloud Storage",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChenglongMa/skipper-gcstorage.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "google-cloud-storage",
+    "streaming-file-upload",
+    "streaming",
+    "upload",
+    "sails",
+    "express"
+  ],
+  "homepage": "https://github.com/lukasreichart/skipper-azure",
+  "author": "ChenglongMa",
+  "license": "MIT",
+  "dependencies": {
+    "@google-cloud/storage": "5.3.0",
+    "concat-stream": "^2.0.0",
+    "lodash": "4.17.20",
+    "mime": "^2.4.6",
+    "uuid": "^8.3.1"
+  }
+}
