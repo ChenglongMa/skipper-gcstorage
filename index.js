@@ -1,12 +1,7 @@
 const Writable = require("stream").Writable;
 const _ = require("lodash");
 const { Storage } = require('@google-cloud/storage');
-const concat = require("concat-stream");
 const mime = require("mime");
-const { v4: uuidv4 } = require('uuid');
-const path = require('path');
-
-
 
 /**
  * skipper-gcs
@@ -15,6 +10,10 @@ const path = require('path');
  *         @property {String?} projectId
  *         @property {String?} keyFilename
  *         @property {String?} bucket
+ *         @property {Object?} bucketMetadata used to create non-existing bucket
+ *         @property {Number?} maxBytes
+ *         @property {Object?} metadata The metadata of gcs file
+ *         @property {Bool?} public Whether to make the file public
  *
  * @returns {Dictionary}
  *         @property {Function} ls
@@ -29,41 +28,31 @@ module.exports = function SkipperGCS(globalOpts) {
   });
   const authOpts = {
     projectId: globalOpts.projectId || process.env.GOOGLE_CLOUD_PROJECT,
-    keyFilename: globalOpts.keyFilename || this.projectId ? process.env.GOOGLE_APPLICATION_CREDENTIALS : undefined,
+    keyFilename: globalOpts.keyFilename || (this.projectId ? process.env.GOOGLE_APPLICATION_CREDENTIALS : undefined),
   }
-  const storage = new Storage(_stripKeysWithUndefinedValues(authOpts));
 
-  const bucket = storage.bucket(globalOpts.bucket);
+  const storage = new Storage(_stripKeysWithNilValues(authOpts));
+
+  const bucket = _getOrCreatBucket(storage, globalOpts.bucket, _stripKeysWithNilValues(globalOpts.bucketMetadata));
   const adapter = {
-    ls: async function (dirname, cb) {
+    ls: function (dirname, done) {
       bucket.getFiles({ prefix: dirname, }, function (err, files) {
         if (err) {
-          cb(err);
+          done(err);
         } else {
           files = _.map(files, "name");
-          cb(null, files);
+          done(undefined, files);
         }
       });
     },
-    read: function (fd, cb) {
-      const readStream = bucket.file(fd).createReadStream();
-
-      readStream
-        .on("error", function (err) {
-          cb(err);
-        })
-        .on("response", function () {
-          // Server connected and responded with the specified status and headers.
-        })
-        .on("end", function () {
-          // The file is fully downloaded.
-        })
-        .pipe(concat(function (data) {
-          cb(null, data);
-        }));
+    read: function (fd) {
+      if (arguments[1]) {
+        return arguments[1](new Error('For performance reasons, skipper-s3 does not support passing in a callback to `.read()`'));
+      }
+      return readStream = bucket.file(fd).createReadStream();
     },
-    rm: function (filename, cb) {
-      bucket.file(filename).delete(cb);
+    rm: function (filename, done) {
+      bucket.file(filename).delete(done);
     },
     /**
      * A simple receiver for Skipper that writes Upstreams to Google Cloud Storage
@@ -114,9 +103,8 @@ module.exports = function SkipperGCS(globalOpts) {
         // The default `upload` implements a unique filename by combining:
         //  • a generated UUID  (like "4d5f444-38b4-4dc3-b9c3-74cb7fbbc932")
         //  • the uploaded file's original extension (like ".jpg")
-        const newFilename = path.join(path.dirname(incomingFd), uuidv4() + path.extname(incomingFd));
-
-        incomingFileStream.pipe(bucket.file(newFilename).createWriteStream({
+        const file = bucket.file(incomingFd);
+        incomingFileStream.pipe(file.createWriteStream({
           metadata: metadata,
         }))
           .on('error', (err) => receiver__.emit("error", err))
@@ -142,13 +130,29 @@ module.exports = function SkipperGCS(globalOpts) {
 //////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Get a bucket from gcs. Creat a new one if not exists.
+ * @param {Storage} storage The Google Cloud Storage instance
+ * @param {string} bucketName The name of a bucket
+ * @param {object} metadata Metadata to set for the bucket. \
+ *    Refer to https://googleapis.dev/nodejs/storage/latest/global.html#CreateBucketRequest
+ */
+function _getOrCreatBucket(storage, bucketName, metadata) {
+  let bucket = storage.bucket(bucketName);
+  bucket.exists(function (err, exists) {
+    if (err || !exists) {
+      bucket.create(metadata, function (err, newBucket, _) {
+        if (!err) {
+          bucket = newBucket;
+        }
+      });
+    }
+  });
+  return bucket;
+}//ƒ
+
+/**
  * destructive -- mutates, returns reference only for convenience
  */
-function _stripKeysWithUndefinedValues(dictionary) {
-  for (let k in dictionary) {
-    if (dictionary[k] === undefined) {
-      delete dictionary[k];
-    }
-  }
-  return dictionary;
+function _stripKeysWithNilValues(dictionary) {
+  return _.omitBy(dictionary, _.isNil);
 }//ƒ
