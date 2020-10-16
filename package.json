@@ -1,6 +1,6 @@
 {
   "name": "skipper-gcstorage",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "A skipper adapter used for uploading files to Google Cloud Storage",
   "main": "index.js",
   "repository": {
