@@ -1,15 +1,25 @@
 # [<img title="skipper-gcstorage - Google Cloud Storage adapter for Skipper" src="http://i.imgur.com/P6gptnI.png" width="200px" alt="skipper emblem - face of a ship's captain"/>](https://github.com/ChenglongMa/skipper-gcstorage.git) Google Cloud Storage Blob Adapter
 
+[![npm version](https://badge.fury.io/js/skipper-gcstorage.svg)](https://badge.fury.io/js/skipper-gcstorage)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
 **Google Cloud Storage** adapter for receiving [upstreams](https://github.com/balderdashy/skipper#what-are-upstreams). Particularly useful for handling streaming multipart file uploads from the [Skipper](https://github.com/balderdashy/skipper) body parser.
 
 ## Installation
+### Option 1: NPM Package
 
 [![NPM](https://nodei.co/npm/skipper-gcstorage.png)](https://npmjs.org/package/skipper-gcstorage)
 
-```
+```bash
 $ npm i skipper-gcstorage
+```
+### Option2: GitHub Package
+
+[![GitHub](https://nodei.co/npm/@chenglongma/skipper-gcstorage.png)](https://github.com/ChenglongMa/skipper-gcstorage/packages)
+
+```bash
+$ npm i @chenglongma/skipper-gcstorage
 ```
 
 ## Usage
@@ -50,10 +60,6 @@ Please don't check in your GCP credentials :)
    4. \*For more details, please refer to https://cloud.google.com/docs/authentication/production#command-line.
 3. Use with [sails-hook-uploads](https://www.npmjs.com/package/sails-hook-uploads) for better results :)
 
-
-## License
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Acknowledgement
 
