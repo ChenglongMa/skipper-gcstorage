@@ -26,16 +26,10 @@ module.exports = function SkipperGCS(globalOpts) {
   _.defaults(globalOpts, {
     bucket: "",
   });
-  const authOpts = {
-    projectId: globalOpts.projectId || process.env.GOOGLE_CLOUD_PROJECT,
-    keyFilename: globalOpts.keyFilename || (this.projectId ? process.env.GOOGLE_APPLICATION_CREDENTIALS : undefined),
-  }
 
-  const storage = new Storage(_stripKeysWithNilValues(authOpts));
-
-  const bucket = _getOrCreatBucket(storage, globalOpts.bucket, _stripKeysWithNilValues(globalOpts.bucketMetadata));
   const adapter = {
     ls: function (dirname, done) {
+      const bucket = _getBucket(globalOpts);
       bucket.getFiles({ prefix: dirname, }, function (err, files) {
         if (err) {
           done(err);
@@ -47,11 +41,13 @@ module.exports = function SkipperGCS(globalOpts) {
     },
     read: function (fd) {
       if (arguments[1]) {
-        return arguments[1](new Error('For performance reasons, skipper-s3 does not support passing in a callback to `.read()`'));
+        return arguments[1](new Error('For performance reasons, skipper-gcstorage does not support passing in a callback to `.read()`'));
       }
+      const bucket = _getBucket(globalOpts);
       return readStream = bucket.file(fd).createReadStream();
     },
     rm: function (filename, done) {
+      const bucket = _getBucket(globalOpts);
       bucket.file(filename).delete(done);
     },
     /**
@@ -80,45 +76,47 @@ module.exports = function SkipperGCS(globalOpts) {
 
       // This `_write` method is invoked each time a new file is pumped in
       // from the upstream.  `incomingFileStream` is a readable binary stream.
-      receiver__._write = function onFile(incomingFileStream, encoding, proceed) {
-        // `skipperFd` is the file descriptor-- the unique identifier.
-        // Often represents the location where file should be written.
-        //
-        // But note that we formerly used `fd`, but now Node attaches an `fd` property
-        // to Readable streams that come from the filesystem.  So this kinda messed
-        // us up.  And we had to do this instead:
-        const incomingFd = incomingFileStream.skipperFd || (_.isString(incomingFileStream.fd) ? incomingFileStream.fd : undefined);
-        if (!_.isString(incomingFd)) {
-          return proceed(new Error('In skipper-gcstorage adapter, write() method called with a stream that has an invalid `skipperFd`: ' + incomingFd));
-        }
+      receiver__._write = (incomingFileStream, encoding, proceed) => {
+        _getOrCreatBucket(options, bucket => {
+          // `skipperFd` is the file descriptor-- the unique identifier.
+          // Often represents the location where file should be written.
+          //
+          // But note that we formerly used `fd`, but now Node attaches an `fd` property
+          // to Readable streams that come from the filesystem.  So this kinda messed
+          // us up.  And we had to do this instead:
+          const incomingFd = incomingFileStream.skipperFd || (_.isString(incomingFileStream.fd) ? incomingFileStream.fd : undefined);
+          if (!_.isString(incomingFd)) {
+            return proceed(new Error('In skipper-gcstorage adapter, write() method called with a stream that has an invalid `skipperFd`: ' + incomingFd));
+          }
 
-        incomingFileStream.once('error', (unusedErr) => {
-          // console.log('ERROR ON incoming readable file stream in Skipper S3 adapter (%s) ::', incomingFileStream.filename, unusedErr);
-        });//œ
+          incomingFileStream.once('error', (unusedErr) => {
+            // console.log('ERROR ON incoming readable file stream in Skipper S3 adapter (%s) ::', incomingFileStream.filename, unusedErr);
+          });//œ
 
-        const metadata = {};
-        _.defaults(metadata, options.metadata);
-        metadata.contentType = mime.getType(incomingFd);
+          const metadata = {};
+          _.defaults(metadata, options.metadata);
+          metadata.contentType = mime.getType(incomingFd);
 
-        // The default `upload` implements a unique filename by combining:
-        //  • a generated UUID  (like "4d5f444-38b4-4dc3-b9c3-74cb7fbbc932")
-        //  • the uploaded file's original extension (like ".jpg")
-        const file = bucket.file(incomingFd);
-        incomingFileStream.pipe(file.createWriteStream({
-          metadata: metadata,
-        }))
-          .on('error', (err) => receiver__.emit("error", err))
-          .on('finish', function () {
-            incomingFileStream.extra = file.metadata;
-            if (options.public) {
-              file.makePublic().then(() => {
-                incomingFileStream.extra.Location = "https://storage.googleapis.com/" + options.bucket + "/" + incomingFd;
+          // The default `upload` implements a unique filename by combining:
+          //  • a generated UUID  (like "4d5f444-38b4-4dc3-b9c3-74cb7fbbc932")
+          //  • the uploaded file's original extension (like ".jpg")
+          const file = bucket.file(incomingFd);
+          incomingFileStream.pipe(file.createWriteStream({
+            metadata: metadata,
+          }))
+            .on('error', (err) => receiver__.emit("error", err))
+            .on('finish', function () {
+              incomingFileStream.extra = file.metadata;
+              if (options.public) {
+                file.makePublic().then(() => {
+                  incomingFileStream.extra.Location = "https://storage.googleapis.com/" + options.bucket + "/" + incomingFd;
+                  proceed();
+                });
+              } else {
                 proceed();
-              });
-            } else {
-              proceed();
-            }
-          });
+              }
+            });
+        });
       };
       return receiver__;
     },
@@ -130,24 +128,36 @@ module.exports = function SkipperGCS(globalOpts) {
 //////////////////////////////////////////////////////////////////////////////
 
 /**
- * Get a bucket from gcs. Creat a new one if not exists.
- * @param {Storage} storage The Google Cloud Storage instance
- * @param {string} bucketName The name of a bucket
- * @param {object} metadata Metadata to set for the bucket. \
- *    Refer to https://googleapis.dev/nodejs/storage/latest/global.html#CreateBucketRequest
+ * Get a bucket from gcs.
+ * @param {object} options Options to access buckets
  */
-function _getOrCreatBucket(storage, bucketName, metadata) {
-  let bucket = storage.bucket(bucketName);
-  bucket.exists(function (err, exists) {
-    if (err || !exists) {
-      bucket.create(metadata, function (err, newBucket, _) {
-        if (!err) {
-          bucket = newBucket;
-        }
-      });
+function _getBucket(options) {
+  const authOpts = {
+    projectId: options.projectId || process.env.GOOGLE_CLOUD_PROJECT,
+    keyFilename: options.keyFilename || (this.projectId ? process.env.GOOGLE_APPLICATION_CREDENTIALS : undefined),
+  }
+  const storage = new Storage(_stripKeysWithNilValues(authOpts));
+  return storage.bucket(options.bucket);
+}//ƒ
+
+/**
+ * Get a bucket from gcs. Creat a new one if not exists.
+ * @param {object} options Options to access the bucket. 
+ * @param {function} cb Callback function executed after creation
+ */
+function _getOrCreatBucket(options, cb) {
+  const bucket = _getBucket(options);
+  bucket.exists().then(exists => {
+    if (!exists[0]) {
+      const metadata = _stripKeysWithNilValues(options.bucketMetadata);
+      bucket.create(metadata).then(data => {
+        const newBucket = data[0];
+        cb(newBucket);
+      })
+    } else {
+      cb(bucket);
     }
   });
-  return bucket;
 }//ƒ
 
 /**

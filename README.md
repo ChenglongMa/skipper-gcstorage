@@ -32,8 +32,10 @@ req.file('avatar')
   bucket: 'existing_or_new_bucket_name', // Will create new one if no such bucket exists.
   // Optional
   projectId: 'GOOGLE_CLOUD_PROJECT', // Mandatory if `keyFilename` was specified.
-  keyFilename: 'GOOGLE_APPLICATION_CREDENTIALS', 
-  bucketMetadata: {},
+  keyFilename: '/path/to/GOOGLE_APPLICATION_CREDENTIALS.json', 
+  bucketMetadata: {
+    location: 'us-west1',
+  },  // Refer to https://googleapis.dev/nodejs/storage/latest/global.html#CreateBucketRequest
   maxBytes: 60000, 
   metadata: {},
   public: true
