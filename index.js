@@ -2,6 +2,7 @@ const Writable = require("stream").Writable;
 const _ = require("lodash");
 const { Storage } = require('@google-cloud/storage');
 const mime = require("mime");
+const sharp = require('sharp');
 
 /**
  * skipper-gcs
@@ -14,6 +15,9 @@ const mime = require("mime");
  *         @property {Number?} maxBytes
  *         @property {Object?} metadata The metadata of gcs file
  *         @property {Bool?} public Whether to make the file public
+ *         @property {Object?} resize // refer to https://sharp.pixelplumbing.com/api-resize#resize
+ *                   @property {Number?} width
+ *                   @property {Number?} height
  *
  * @returns {Dictionary}
  *         @property {Function} ls
@@ -25,6 +29,7 @@ module.exports = function SkipperGCS(globalOpts) {
   globalOpts = globalOpts || {};
   _.defaults(globalOpts, {
     bucket: "",
+    resize: {}
   });
 
   const adapter = {
@@ -90,7 +95,7 @@ module.exports = function SkipperGCS(globalOpts) {
           }
 
           incomingFileStream.once('error', (unusedErr) => {
-            // console.log('ERROR ON incoming readable file stream in Skipper S3 adapter (%s) ::', incomingFileStream.filename, unusedErr);
+            // console.log('ERROR ON incoming readable file stream in Skipper Google Cloud Storage adapter (%s) ::', incomingFileStream.filename, unusedErr);
           });//œ
 
           const metadata = {};
@@ -101,9 +106,14 @@ module.exports = function SkipperGCS(globalOpts) {
           //  • a generated UUID  (like "4d5f444-38b4-4dc3-b9c3-74cb7fbbc932")
           //  • the uploaded file's original extension (like ".jpg")
           const file = bucket.file(incomingFd);
-          incomingFileStream.pipe(file.createWriteStream({
-            metadata: metadata,
-          }))
+          const isImage = metadata.contentType && metadata.contentType.startsWith('image');
+          const resize = { ...options.resize, fit: 'inside' };
+          const transformer = sharp().rotate().resize(resize);
+          const stream = isImage && (resize.width || resize.height)
+            ? incomingFileStream.pipe(transformer)
+            : incomingFileStream;
+
+          stream.pipe(file.createWriteStream({ metadata: metadata, }))
             .on('error', (err) => receiver__.emit("error", err))
             .on('finish', function () {
               incomingFileStream.extra = file.metadata;
@@ -142,7 +152,7 @@ function _getBucket(options) {
 
 /**
  * Get a bucket from gcs. Creat a new one if not exists.
- * @param {object} options Options to access the bucket. 
+ * @param {object} options Options to access the bucket.
  * @param {function} cb Callback function executed after creation
  */
 function _getOrCreatBucket(options, cb) {

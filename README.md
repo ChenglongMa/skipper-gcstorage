@@ -22,6 +22,10 @@ $ npm i skipper-gcstorage
 $ npm i @chenglongma/skipper-gcstorage
 ```
 
+## Changelog
+### Ver 2.0.0
+1. Add `resize` options, which can compress the **images** before uploading.
+
 ## Usage
 
 ```javascript
@@ -38,7 +42,11 @@ req.file('avatar')
   },  // Refer to https://googleapis.dev/nodejs/storage/latest/global.html#CreateBucketRequest
   maxBytes: 60000, 
   metadata: {},
-  public: true
+  public: true,
+  resize: {
+    width: 500,
+    height: 500
+  }, // Refer to https://sharp.pixelplumbing.com/api-resize#resize
 }, function whenDone(err, uploadedFiles) {
   if (err) {
     return res.serverError(err);
