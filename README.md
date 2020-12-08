@@ -23,6 +23,14 @@ $ npm i @chenglongma/skipper-gcstorage
 ```
 
 ## Changelog
+
+### Ver 2.1.0
+
+Thanks [jspark-gigworks (Anselmo Park)](https://github.com/jspark-gigworks) so much for his comments!
+
+1. Emit`writefile` event when finishing the job.
+2. Support additional `CreateWriteStreamOptions` listed in https://googleapis.dev/nodejs/storage/latest/global.html#CreateWriteStreamOptions.
+
 ### Ver 2.0.0
 1. Add `resize` options, which can compress the **images** before uploading.
 
@@ -43,6 +51,10 @@ req.file('avatar')
   maxBytes: 60000, 
   metadata: {},
   public: true,
+  gzip: true,
+  // Other options in `CreateWriteStreamOptions`
+  // Refer to https://googleapis.dev/nodejs/storage/latest/global.html#CreateWriteStreamOptions
+  ...CreateWriteStreamOptions,
   resize: {
     width: 500,
     height: 500
@@ -75,3 +87,4 @@ Please don't check in your GCP credentials :)
 
 1. [Sails Skipper](https://github.com/sailshq/skipper)
 2. [Skipper-S3](https://github.com/balderdashy/skipper-s3)
+3. [jspark-gigworks (Anselmo Park)](https://github.com/jspark-gigworks)

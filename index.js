@@ -98,35 +98,26 @@ module.exports = function SkipperGCS(globalOpts) {
             // console.log('ERROR ON incoming readable file stream in Skipper Google Cloud Storage adapter (%s) ::', incomingFileStream.filename, unusedErr);
           });//œ
 
-          const metadata = {};
-          _.defaults(metadata, options.metadata);
-          metadata.contentType = mime.getType(incomingFd);
+          options.metadata.contentType = mime.getType(incomingFd);
 
           // The default `upload` implements a unique filename by combining:
           //  • a generated UUID  (like "4d5f444-38b4-4dc3-b9c3-74cb7fbbc932")
           //  • the uploaded file's original extension (like ".jpg")
           const file = bucket.file(incomingFd);
-          const isImage = metadata.contentType && metadata.contentType.startsWith('image');
+          const isImage = options.metadata.contentType && options.metadata.contentType.startsWith('image');
           const resize = { ...options.resize, fit: 'inside' };
           const transformer = sharp().rotate().resize(resize);
           const stream = isImage && (resize.width || resize.height)
             ? incomingFileStream.pipe(transformer)
             : incomingFileStream;
 
-          stream.pipe(file.createWriteStream({ metadata: metadata, }))
+          stream.pipe(file.createWriteStream(options))
             .on('error', (err) => receiver__.emit("error", err))
             .on('finish', function () {
               incomingFileStream.extra = file.metadata;
               // Indicate that a file was persisted.
               receiver__.emit('writefile', incomingFileStream);
-              if (options.public) {
-                file.makePublic().then(() => {
-                  incomingFileStream.extra.Location = "https://storage.googleapis.com/" + options.bucket + "/" + incomingFd;
-                  proceed();
-                });
-              } else {
-                proceed();
-              }
+              proceed();
             });
         });
       };
