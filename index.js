@@ -117,6 +117,8 @@ module.exports = function SkipperGCS(globalOpts) {
             .on('error', (err) => receiver__.emit("error", err))
             .on('finish', function () {
               incomingFileStream.extra = file.metadata;
+              // Indicate that a file was persisted.
+              receiver__.emit('writefile', incomingFileStream);
               if (options.public) {
                 file.makePublic().then(() => {
                   incomingFileStream.extra.Location = "https://storage.googleapis.com/" + options.bucket + "/" + incomingFd;
