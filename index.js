@@ -98,6 +98,7 @@ module.exports = function SkipperGCS(globalOpts) {
             // console.log('ERROR ON incoming readable file stream in Skipper Google Cloud Storage adapter (%s) ::', incomingFileStream.filename, unusedErr);
           });//œ
 
+          options.metadata = options.metadata || {};
           options.metadata.contentType = mime.getType(incomingFd);
 
           // The default `upload` implements a unique filename by combining:
