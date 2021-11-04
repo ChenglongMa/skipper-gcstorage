@@ -24,11 +24,17 @@ $ npm i @chenglongma/skipper-gcstorage
 
 ## Changelog
 
+### Ver 2.2.0
+
+1. Update dependencies to the latest version.
+   1. [sharp](https://sharp.pixelplumbing.com/): 0.29.2, now it supports M1 chipset (thanks [lahiruelectrily (github.com)](https://github.com/lahiruelectrily))
+   2. [mime](https://www.npmjs.com/package/mime): 3.0.0
+
 ### Ver 2.1.0
 
 Thanks [jspark-gigworks (Anselmo Park)](https://github.com/jspark-gigworks) so much for his comments!
 
-1. Emit`writefile` event when finishing the job.
+1. Emit `writefile` event when finishing the job.
 2. Support additional `CreateWriteStreamOptions` listed in https://googleapis.dev/nodejs/storage/latest/global.html#CreateWriteStreamOptions.
 
 ### Ver 2.0.0
