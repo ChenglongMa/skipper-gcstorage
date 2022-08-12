@@ -1,5 +1,3 @@
-https://cloud.google.com/storage/docs/folders
-
 # [<img title="skipper-gcstorage - Google Cloud Storage adapter for Skipper" src="http://i.imgur.com/P6gptnI.png" width="200px" alt="skipper emblem - face of a ship's captain"/>](https://github.com/ChenglongMa/skipper-gcstorage.git) Google Cloud Storage Blob Adapter
 
 ![npm](https://img.shields.io/npm/v/skipper-gcstorage)
@@ -119,6 +117,10 @@ Please don't check in your GCP credentials :)
     3. Login with an eligible [service account](https://cloud.google.com/iam/docs/service-accounts);
     4. \*For more details, please refer to https://cloud.google.com/docs/authentication/production#command-line.
 3. Use with [sails-hook-uploads](https://www.npmjs.com/package/sails-hook-uploads) for better results :)
+4. > Cloud Storage operates with a flat namespace, which means that folders don't actually exist within Cloud Storage.
+   > If you create an object named `folder1/file.txt` in the bucket `your-bucket`, the path to the object is `your-bucket/folder1/file.txt`, 
+   > but there is no folder named `folder1`; instead, the string `folder1` is part of the object's name. 
+   > Please refer to https://cloud.google.com/storage/docs/folders
 
 ## Acknowledgement
 
