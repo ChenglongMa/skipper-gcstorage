@@ -18,7 +18,7 @@ the [Skipper](https://github.com/balderdashy/skipper) body parser.
 $ npm i skipper-gcstorage
 ```
 
-### Option2: GitHub Package
+### ~~Option2: GitHub Package~~ [Deprecated: GitHub package won't update any more, the last version is v2.2.0]
 
 [![GitHub](https://nodei.co/npm/@chenglongma/skipper-gcstorage.png)](https://github.com/ChenglongMa/skipper-gcstorage/packages)
 
