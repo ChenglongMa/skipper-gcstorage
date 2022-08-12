@@ -21,7 +21,7 @@
     "skipper",
     "express"
   ],
-  "homepage": "https://github.com/ChenglongMa/skipper-gcstorage.git#readme",
+  "homepage": "https://chenglongma.com/skipper-gcstorage/",
   "author": "ChenglongMa",
   "license": "MIT",
   "dependencies": {

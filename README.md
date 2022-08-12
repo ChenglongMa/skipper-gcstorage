@@ -120,7 +120,8 @@ Please don't check in your GCP credentials :)
 4. > Cloud Storage operates with a flat namespace, which means that folders don't actually exist within Cloud Storage.
    > If you create an object named `folder1/file.txt` in the bucket `your-bucket`, the path to the object is `your-bucket/folder1/file.txt`, 
    > but there is no folder named `folder1`; instead, the string `folder1` is part of the object's name. 
-   > Please refer to https://cloud.google.com/storage/docs/folders
+     
+   Please refer to https://cloud.google.com/storage/docs/folders
 
 ## Acknowledgement
 
